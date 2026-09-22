@@ -2,8 +2,8 @@
 
 | Field | Value |
 | :---- | :---- |
-| **Organization** | Woof Software |
-| **Author / Primary Contact** | Mykola Ilchuk, Woof Software ([@Noosphere-314](https://github.com/Noosphere-314)) |
+| **Organization** | Woof |
+| **Author / Primary Contact** | Mykola Ilchuk, Woof ([@Noosphere-314](https://github.com/Noosphere-314)) |
 | **Status** | Submitted |
 | **Created** | 2026-08-17 |
 | **Proposal Type** | RFP-aligned |
@@ -78,6 +78,7 @@ A permissionless on-chain registry that any Zenith DeFi protocol can integrate, 
 | Interest-rate model | Reference to the asset's rate-curve contract |
 | Price oracle | Reference to the asset's price source |
 | Oracle staleness threshold | Maximum acceptable price age before fail-safe |
+| Attestation validity window | For issuer-attested values (for example a fund NAV) rather than market feeds: maximum attestation age and a revocation check before the value may be used |
 | (extension points) | CIP-56 compliance flags and protocol-specific fields |
 
 **Registry operations (illustrative):** read the current parameter set for a given protocol/asset; propose a parameter update subject to a timelock; execute a proposed update after the timelock elapses; and emergency-pause an asset to halt new positions. The registry will cover the following functional areas (final contract decomposition driven by the cleanest, most auditable design during M1):
@@ -88,7 +89,7 @@ A permissionless on-chain registry that any Zenith DeFi protocol can integrate, 
 Key design choices:
 - **Configurator pattern.** Every parameter update goes through propose → timelock → execute, borrowed from Comet's Configurator architecture.
 - **Per-protocol namespacing.** Mystic and Cantopy can register independently without colliding.
-- **Governance-agnostic.** Supports Compound Governor, Safe multisig, or custom Canton-party multi-sig as authorized parameter setter.
+- **Governance-agnostic.** Supports Compound Governor, Safe multisig, or any EVM-addressable signer as authorized parameter setter. A Canton party is not an EVM address; using a Canton-side committee as setter requires an EVM-compatible adapter (a signer or relayer holding the setter role), which is out of scope for the base Registry and is scoped separately if a design partner needs it.
 - **Emergency circuit breaker.** Pauses new positions while existing positions wind down safely.
 - **Structured events.** Off-chain consumers (dashboards, simulators) can reconstruct full Registry state from emitted logs.
 
@@ -120,9 +121,9 @@ Public good — hosted as a static site by Woof, source published so any party c
 
 Three production-shaped, open-source implementation examples demonstrating the parameter-governance patterns in use — two consuming the Registry on the EVM side, one Canton-native in DAML.
 
-1. **ERC-4626 vault with risk-managed parameters** (Solidity) — CIP-56-compatible vault consulting the Registry for supply caps and oracle staleness checks. Suitable as a template for the 4+ vault proposals in the queue.
+1. **ERC-4626 vault with risk-managed parameters** (Solidity) — a vault over an EVM-native ERC-20 underlying, consulting the Registry for supply caps and oracle staleness checks. ERC-4626 requires an ERC-20 underlying; a CIP-56 representation on Zenith EVM is a separate dependency that is agreed with the token issuer, not assumed by this deliverable. Suitable as a template for the 4+ vault proposals in the queue.
 2. **Simple lending protocol with risk-managed parameters** (Solidity) — stripped-down Compound v3-shaped market using the Registry for collateral factors, liquidation thresholds, and IRM selection. Not intended to compete with Mystic or any other lending product — explicitly a reference for parameter integration.
-3. **DAML risk-parameter governance example** — the same propose → timelock → execute pattern expressed as open-source DAML templates (a governed risk-parameter set plus a minimal consuming contract), runnable against a local Canton ledger. This gives Canton-native firms an OSS example to follow when their own DAML contracts require governed parameters — with no dependency on the EVM side.
+3. **DAML risk-parameter governance example** — the same propose → timelock → execute pattern expressed as open-source DAML templates (a governed risk-parameter set plus a minimal consuming contract), runnable against a local Canton ledger. This gives Canton-native firms an OSS example to follow when their own DAML contracts require governed parameters — with no dependency on the EVM side. Because visibility on Canton is a stakeholder property, the templates also define a designated **risk-observer role**: one or more parties named at setup, made observers of the governed parameter set and of its proposal and execution records, so that risk management and monitoring can read current values and history through the Ledger API without holding any authority over them, and can be added or revoked by the governing party. The role is deliberately a small named set rather than a broad observer list: on Canton a wide observer list grows the contract and its stakeholder set with every reader, a scaling concern other teams have raised on their own designs, so aggregate or public views belong in an off-ledger reader over emitted events rather than in the parameter contract's stakeholders. Where a Daml-side stack such as the OpenZeppelin reference implementations needs a governed parameter source, these templates are the composition point; the Solidity Registry serves protocols that execute on Zenith EVM, and no synchronous read from Daml into EVM state is assumed.
 
 All three ship with CI test suites exercising governance update flows and emergency-pause paths; simulator-driven recommendation flows are exercised against the EVM pair once the optional tooling lands (final milestone).
 
@@ -135,7 +136,7 @@ Our Canton build-and-deploy workflow is already exercised end-to-end in a public
 - **CIP-0100 Dev Fund priorities.** Public good infrastructure, MIT-licensed, deployed permissionlessly.
 - **DeFi readiness.** Multiple lending/vault proposals in the open queue need this before mainnet. These open primitives accelerate the entire EVM-side DeFi ecosystem.
 - **2026 DevEx Survey alignment.** "Security & Auditing" ranks 24% Critical / 51% Important. Risk parameter management is the **market-level** risk-mitigation layer distinct from code-level audits.
-- **Institutional fit.** 83% of Canton developers build TradFi/hybrid apps. Institutional CRO offices need transparent parameter governance and stress-test infrastructure.
+- **Institutional fit.** 83% of projects in the Foundation's 2026 Developer Experience survey (41 respondents) identify as TradFi or hybrid. Institutional CRO offices need transparent parameter governance and stress-test infrastructure.
 - **Independent positioning.** Sits in a layer (parameter management) that does not duplicate or require coordination with any single DAML-side team. Friendly co-existence with SafeVault, Risk Ratings, Collateral Control Plane, Hacken — different layers, all useful.
 - **2026-2028 roadmap, RFP 13 (Payments and DeFi).** The Foundation's [2026-2028 Strategic Roadmap](https://github.com/canton-foundation/canton-dev-fund/blob/main/2026-2028-strategic-roadmap.md) asks under Payments and DeFi for "open-source tooling, reference implementations, and standards" for DeFi and liquidity workflows, and specifies that successful proposals "focus on reusable components or standards that can support multiple Canton applications rather than one-off application-specific work". That is this proposal's shape: a parameter registry plus reference implementations that any protocol integrates, MIT-licensed, operated by no one. The RWA Standards RFP (item 12.2) separately lists "Repo, collateral, lending, and servicing workflows"; the registry is the parameter-governance layer such workflows consult.
 - **Review Process priority areas.** The [Development Fund Proposal Review Process](https://github.com/canton-foundation/canton-dev-fund/blob/main/Development%20Fund%20Proposal%20Review%20Process.md) now directs reviewers to weigh alignment with the 2026-2027 Requests for Proposals, and its priority areas still apply: **Security and Resilience** (which lists "security auditing and tooling" and "monitoring, compliance, and third-party audit capabilities") and **App Building and Developer Experience** ("reduced developer friction"). The Risk Engine provides the market-level risk tooling and monitoring every lending or vault protocol needs before mainnet. (Quoted phrases are verbatim from those documents.)
@@ -170,7 +171,7 @@ Reference integrations are new code; they do not modify any existing protocol.
 - **Deliverables / Value Metrics:**
   - ERC-4626 reference vault integrated with the Registry, deployed on Zenith testnet.
   - Reference lending protocol integrated with the Registry, deployed on Zenith testnet.
-  - DAML risk-parameter governance example (governed parameter-set templates + minimal consuming contract), executed against a local Canton ledger with run evidence committed.
+  - DAML risk-parameter governance example (governed parameter-set templates + minimal consuming contract + designated risk-observer role with read access to the parameter set and its history), executed against a local Canton ledger with run evidence committed.
   - Migration guide for existing protocols (Mystic, Cantopy, D2, others) to adopt the Registry.
   - CI test suites for all three examples covering governance update flows and emergency-pause paths.
   - **Target:** at least 1 integration commitment from a protocol team in the open queue, with public statement (adoption signal, reported not gated).
@@ -196,7 +197,7 @@ Reference integrations are new code; they do not modify any existing protocol.
 Milestones 1 and 2 are gated on deliverables, since the primitives must exist before anyone can adopt them. Milestone 3, the optional tooling layer, carries an explicit adoption gate: the ecosystem should not fund tooling on top of primitives nobody is using.
 
 **Hard acceptance criteria (within our control):**
-- **Operational readiness:** Both EVM reference integrations operate end-to-end (deposit, borrow, liquidation, parameter update, emergency-pause flow); the DAML governance example executes its full propose → timelock → execute cycle on a local Canton ledger.
+- **Operational readiness:** Both EVM reference integrations operate end-to-end against the Registry, each for its own operations: the vault for deposit, withdraw, parameter update and emergency pause; the lending market for supply, borrow, liquidation, parameter update and emergency pause; the DAML governance example executes its full propose → timelock → execute cycle on a local Canton ledger, and the designated risk-observer party reads the resulting parameter set and execution record through the Ledger API without being a signatory.
 - **Reproducibility:** Simulator outputs are deterministic — same inputs produce same outputs, validated by CI golden tests.
 - **Documentation completeness:** Migration guide published; reviewed by ≥ 1 protocol team where available, otherwise validated against a Woof reference integration.
 - **Security posture:** Solidity contracts pass Slither with zero high-severity findings.
@@ -271,6 +272,8 @@ How protocols discover, adopt, and depend on the Risk Engine:
 
 This proposal sits at a layer that does not overlap with any single funded or proposed work:
 
+- **OpenZeppelin Canton Stack ([#262](https://github.com/canton-foundation/canton-dev-fund/pull/262))** — funded Daml reference implementations (DEX, vaults, lending) that ship the baseline parameter surface and its change path: `VaultParams`, `maxStaleness`, `maxDeviation`, the `PriceOracle` interface requirements, role transfer through access control. Calibration is explicitly outside their scope: section 7 of their lending design lists buffer sizing, debt ceilings and insurance-fund stress evidence as open questions for the operator, and on 3 September 2026 OpenZeppelin confirmed the boundary publicly: "We do not own calibration. [...] So your proposal does not overlap with ours. It fills the layer we leave to operators." They named two composition seams: parameter governance, where this Registry with its propose-execute windows and execution-time validation is "a natural author for VaultParams updates", and the oracle interface, which their reference implementations specify but do not implement ([forum reply](https://forum.canton.network/t/9059/6)). We will align on both seams as their implementation starts.
+- **RedStone CAPS ([#497](https://github.com/canton-foundation/canton-dev-fund/pull/497)) and Kaiko Oracle Data Standard ([#113](https://github.com/canton-foundation/canton-dev-fund/pull/113))** — the price layer. The Registry consumes prices and governs the limits a protocol applies on top of them; it does not produce or distribute price data. A lending protocol on Zenith reads its price from a CAPS feed and its risk limits from the Registry. RedStone confirmed the composition on 2 September 2026 ([reply](https://github.com/canton-foundation/canton-dev-fund/pull/497#issuecomment-5507825170)), and on 8 September confirmed that their derived capsules will implement the `PublishedQuote` and `DataPoint` interfaces from the approved Data Standard (#113). Those are Daml interfaces, so the composition is direct on the Canton side: the DAML governance example (deliverable 3) consumes `PublishedQuote` and `DataPoint` as its price source, reads `publishedAt` and the quote timestamp from their view and applies its own staleness limit; issuer validity and revocation are not part of that interface and, where an attested value needs them, come from the attestation itself. On the EVM side the Solidity Registry stores an EVM oracle address and feed identifier, and the reference integrations read prices through an EVM-compatible oracle adapter; whether a CAPS-derived feed is available on Zenith EVM through such an adapter, and with which trust model, freshness and decimals, is confirmed with RedStone during M1 rather than assumed from the Daml interface support.
 - **SafeVault ([#266](https://github.com/canton-foundation/canton-dev-fund/pull/266))** — capital flow workflows (entry / allocation / redemption / recovery). Different layer (transaction-level workflows, not parameter management). Natural integration partner.
 - **Independent DeFi Risk Ratings ([#131](https://github.com/canton-foundation/canton-dev-fund/pull/131))** — external AAA-D rating service from Staking Rewards. Different model (rating-as-a-service vs on-chain primitives). The Risk Engine produces the parameters their service could rate against.
 - **Canton Collateral Control Plane ([#149](https://github.com/canton-foundation/canton-dev-fund/pull/149))** — collateral-specific subset. Potential integration point for the Registry.
@@ -292,7 +295,7 @@ For a proposal about parameter management, the operating view is the credential 
 
 ## Pre-submission coordination
 
-Low coordination overhead — this is one of the proposal's strengths. No required outreach to any single counterparty.
+Low coordination overhead — this is one of the proposal's strengths. No required outreach to any single counterparty. Composition with specific stacks (the OpenZeppelin reference implementations, BitSafe's Decentralization Manager) is delivered as adapters and examples on top of the standalone deliverables, not as a dependency of them.
 
 Light-touch coordination recommended (not blocking):
 - Brief forum post mentions to SafeVault (#266), Staking Rewards (#131), Collateral Control Plane (#149), and Hacken (#302) confirming layer boundary alignment.
