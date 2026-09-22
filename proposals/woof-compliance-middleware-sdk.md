@@ -151,6 +151,16 @@ The SDK does not depend on any third party's funding outcome, which matters now 
 
 ---
 
+## Dev Fund 2.0 Alignment
+
+**RFP mapping.** RFP 12, RWA Standards, item 12.1: Identity, Credentials and KYC Standards for RWA Workflows. The proposal builds the consumption side of that standard: the open interfaces and reference implementation through which an application acts on a credential or compliance decision that was issued, verified and revoked on Canton. It defines no credential standard of its own and operates no compliance service, and it consumes the credential and party-metadata standards coming out of the Identity and Metadata SIG as they land.
+
+**Ecosystem need and beneficiaries.** Canton holds compliance facts; a Solidity contract on Zenith cannot consult them directly, because Zenith's cross-VM call runs from a Daml workflow to the EVM and not the other way. Today every Zenith EVM team that needs application-level compliance has to design its own bridge between the two, and each design is a separate trust model for reviewers to audit. The direct beneficiaries are Solidity teams building regulated applications on Zenith, and the RWA issuers whose assets they handle; the indirect beneficiary is the ecosystem, which gets one reviewed surface with one set of security properties instead of one per team. Nothing here is operated by Woof as a service, and nothing requires changes to Canton, Daml, Splice or the OSS Wallet.
+
+**Adoption path.** Milestone 1 ships the SDK with a reference integration and a published static-analysis report. Milestone 2 is gated on adoption: a $15,000 tranche is released only when at least two external teams have integrated the SDK in a test environment and published written feedback, and the reported target is at least three external teams publicly committing to evaluate by end of Milestone 2. We are validating the design against concrete issuer workflows before Milestone 1 rather than after; that work is visible in this PR thread.
+
+---
+
 # Milestones and Deliverables
 
 ## Milestone 1: Core Compliance Layer + Middleware Foundation
