@@ -310,7 +310,7 @@ Low coordination overhead — this is one of the proposal's strengths. No requir
 Light-touch coordination recommended (not blocking):
 - Brief forum post mentions to SafeVault (#266), Staking Rewards (#131), Collateral Control Plane (#149), and Hacken (#302) confirming layer boundary alignment.
 - Outreach to Mystic, Cantopy, D2 Finance, Margarita, Meria as potential first integrators — public integration intent strengthens M1 / M3 deliverables.
-- SIG Champion volunteer search via `DeFi Protocols & Liquidity` SIG (7 members).
+- Review volunteers sought via the `DeFi Protocols & Liquidity` SIG (7 members); the formal Champion comes from the Tech & Ops Committee, per CIP-0100.
 
 ---
 
