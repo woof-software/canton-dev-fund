@@ -149,6 +149,16 @@ Reference integrations are new code; they do not modify any existing protocol.
 
 ---
 
+## Dev Fund 2.0 Alignment
+
+**RFP mapping.** RFP 13, Payments and DeFi, under Financial Markets, Standards & Verification. The proposal supplies the parameter-governance layer that lending and vault workflows need before they can be operated at institutional scale.
+
+**Ecosystem need and beneficiaries.** Every lending market and every curated vault on Canton has to govern the same values: collateral factors, caps, liquidation thresholds, oracle staleness limits. OpenZeppelin confirmed the boundary publicly on 3 September 2026: they ship the baseline parameter surface and its change path, and leave calibration and the risk engine to the operator. Without shared primitives each team rebuilds that layer alone, and each rebuild is a separate audit surface. The beneficiaries are lending and vault protocols on Canton and Zenith, the risk and monitoring parties who have to observe those values, and auditors who currently have no common record of what changed and when. The deliverables are MIT-licensed and severable; the optional tooling lands last.
+
+**Adoption path.** Milestones 1 and 2 are gated on deliverables, since the primitives must exist before anyone can adopt them. Milestone 3 carries one hard adoption gate: at least one external Canton DeFi team has deployed the Registry in a test environment and confirmed it publicly. The reported targets, not gated, are at least one production-track protocol publicly committing to integrate by end of Milestone 3 and at least two evaluating. Tokenisys stated public interest in integrating on this infrastructure, naming two of their own products, and the composition points with OpenZeppelin, RedStone and the Kaiko Data Standard are confirmed in writing and recorded in this file.
+
+---
+
 # Milestones and Deliverables
 
 ## Milestone 1: On-Chain Risk Parameter Registry + Governance Patterns
